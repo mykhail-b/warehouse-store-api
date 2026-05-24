@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Backend.Tests/Backend.Tests.csproj" />
+  <Project Path="Backend/Backend.csproj" />
+  <Project Path="ClassLibrary/ClassLibrary.csproj" />
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>
