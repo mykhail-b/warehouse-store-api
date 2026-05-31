@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ClassLibrary.Entity.Warehouse;
+namespace ClassLibrary.Entity;
 
 [Table("InboundDelivery", Schema = "Warehouse")]
 public class InboundDelivery
@@ -15,9 +15,6 @@ public class InboundDelivery
 
     public long VendorId { get; set; }
     public virtual Vendor Vendor { get; set; } = null!;
-
-    public long? VehicleId { get; set; }
-    public virtual Vehicle? Vehicle { get; set; }
 
     [MaxLength(500)]
     public string Note { get; set; } = string.Empty;

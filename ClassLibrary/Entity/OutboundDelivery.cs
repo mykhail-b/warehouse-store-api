@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ClassLibrary.Entity.Warehouse;
+namespace ClassLibrary.Entity;
 
 [Table("OutboundDelivery", Schema = "Warehouse")]
 public class OutboundDelivery
@@ -15,8 +15,6 @@ public class OutboundDelivery
 
     [MaxLength(250)]
     public required string DestinationAddress { get; set; }
-    public long VehicleId { get; set; }
-    public virtual Vehicle Vehicle { get; set; } = null!;
 
     [MaxLength(100)]
     public string RecipientName { get; set; } = string.Empty;

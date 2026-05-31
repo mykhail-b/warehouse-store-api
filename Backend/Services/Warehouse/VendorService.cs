@@ -1,8 +1,8 @@
 ﻿using Backend.Data;
-using ClassLibrary.Entity.Warehouse;
+using ClassLibrary.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Services;
+namespace Backend.Services.Warehouse;
 
 /**/
 

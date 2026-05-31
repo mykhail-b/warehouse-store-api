@@ -1,8 +1,8 @@
 ﻿using Backend.Data;
-using ClassLibrary.Entity.Warehouse;
+using ClassLibrary.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Services;
+namespace Backend.Services.Warehouse;
 
 /*
  
@@ -10,12 +10,12 @@ namespace Backend.Services;
 
 public interface IWarehouseDeliveryService
 {
-    // Приход
+    // Inbound
     Task<InboundDelivery> CreateInboundAsync(InboundDelivery delivery);
     Task<InboundDelivery?> GetInboundByIdAsync(long id);
     Task<IEnumerable<InboundDelivery>> GetAllInboundAsync();
 
-    // Отход
+    // Outbound
     Task<OutboundDelivery> CreateOutboundAsync(OutboundDelivery delivery);
     Task<OutboundDelivery?> GetOutboundByIdAsync(long id);
     Task<IEnumerable<OutboundDelivery>> GetAllOutboundAsync();
@@ -47,10 +47,20 @@ public class WarehouseDeliveryService : IWarehouseDeliveryService
     }
 
     public async Task<InboundDelivery?> GetInboundByIdAsync(long id)
-        => await _context.InboundDeliveries.Include(d => d.Items).FirstOrDefaultAsync(d => d.Id == id);
+    {
+        return await _context.InboundDeliveries
+            .Include(d => d.Items)
+            .FirstOrDefaultAsync(d => d.Id == id);
+    }
+    
 
     public async Task<IEnumerable<InboundDelivery>> GetAllInboundAsync()
-        => await _context.InboundDeliveries.Include(d => d.Items).ToListAsync();
+    {
+        return await _context.InboundDeliveries
+            .Include(d => d.Items)
+            .ToListAsync();
+    }
+    
 
     public async Task<OutboundDelivery> CreateOutboundAsync(OutboundDelivery delivery)
     {
@@ -66,8 +76,18 @@ public class WarehouseDeliveryService : IWarehouseDeliveryService
     }
 
     public async Task<OutboundDelivery?> GetOutboundByIdAsync(long id)
-        => await _context.OutboundDeliveries.Include(d => d.Items).FirstOrDefaultAsync(d => d.Id == id);
+    { 
+       return await _context.OutboundDeliveries
+            .Include(d => d.Items)
+            .FirstOrDefaultAsync(d => d.Id == id);
+    }
+
 
     public async Task<IEnumerable<OutboundDelivery>> GetAllOutboundAsync()
-        => await _context.OutboundDeliveries.Include(d => d.Items).ToListAsync();
+    {
+        return await _context.OutboundDeliveries
+            .Include(d => d.Items)
+            .ToListAsync();
+    }
+    
 }

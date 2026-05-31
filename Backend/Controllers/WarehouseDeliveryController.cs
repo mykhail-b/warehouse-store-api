@@ -1,5 +1,5 @@
-﻿using Backend.Services;
-using ClassLibrary.Entity.Warehouse;
+﻿using Backend.Services.Warehouse;
+using ClassLibrary.Entity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;

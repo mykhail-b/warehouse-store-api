@@ -1,5 +1,5 @@
-﻿using Backend.Services;
-using ClassLibrary.Entity.Warehouse;
+﻿using Backend.Services.Warehouse;
+using ClassLibrary.Entity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -36,5 +36,5 @@ public class WarehouseItemController : ControllerBase
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(long id)
-        => Ok(await _service.DeleteAsync(id));
+        => Ok(await _service.DeleteItemAsync(id));
 }

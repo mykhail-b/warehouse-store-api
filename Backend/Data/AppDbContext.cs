@@ -1,5 +1,4 @@
-﻿using ClassLibrary.Entity.Warehouse;
-using Microsoft.AspNetCore.Identity;
+﻿using ClassLibrary.Entity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,14 +14,23 @@ public class AppDbContext : IdentityDbContext<UserAccount>
     {
     }
 
+    public DbSet<Employee> Employees { get; set; }
     public DbSet<WarehouseItem> WarehouseItems { get; set; }
     public DbSet<Vendor> Vendors { get; set; }
-    public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<InboundDelivery> InboundDeliveries { get; set; }
     public DbSet<OutboundDelivery> OutboundDeliveries { get; set; }
+    public DbSet<Order> Orders { get; set; }
+
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<Order>()
+            .HasMany(o => o.Items)
+            .WithOne(i => i.Order)
+            .HasForeignKey(i => i.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
 }
 
-public class UserAccount : IdentityUser
-{
-
-}

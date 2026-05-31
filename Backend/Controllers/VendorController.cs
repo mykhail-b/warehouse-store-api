@@ -1,5 +1,5 @@
-﻿using Backend.Services;
-using ClassLibrary.Entity.Warehouse;
+﻿using Backend.Services.Warehouse;
+using ClassLibrary.Entity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -17,7 +17,10 @@ public class VendorController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
-        => Ok(await _service.GetAllAsync());
+    {
+        return Ok(await _service.GetAllAsync());
+    }
+    
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(long id)

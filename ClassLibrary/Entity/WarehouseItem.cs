@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ClassLibrary.Entity.Warehouse;
+namespace ClassLibrary.Entity;
 
 public enum CurrencyType
 {

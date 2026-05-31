@@ -1,8 +1,9 @@
 ﻿using Backend.Data;
-using ClassLibrary.Entity.Warehouse;
+using ClassLibrary.Dto;
+using ClassLibrary.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Services;
+namespace Backend.Services.Warehouse;
 /*
  
  */
@@ -12,7 +13,12 @@ public interface IWarehouseItemService
     Task<IEnumerable<WarehouseItem>> GetAllAsync();
     Task<WarehouseItem> CreateAsync(WarehouseItem item);
     Task<WarehouseItem> UpdateAsync(WarehouseItem item);
-    Task<bool> DeleteAsync(long id);
+    Task<bool> DeleteItemAsync(long id);
+
+    // Client side methods
+
+    Task<WarehouseItemDetailDto> GetSummaryListAsync(long id);
+    Task<IEnumerable<WarehouseItemSummaryDto>> GetDetailByIdAsync();
 }
 
 /// <summary>
@@ -53,12 +59,22 @@ public class WarehouseItemService : IWarehouseItemService
         return item;
     }
 
-    public async Task<bool> DeleteAsync(long id)
+    public async Task<bool> DeleteItemAsync(long id)
     {
         var item = await _context.WarehouseItems.FindAsync(id);
         if (item is null) return false;
         item.IsAvailable = false;
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public Task<WarehouseItemDetailDto> GetSummaryListAsync(long id)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<WarehouseItemSummaryDto>> GetDetailByIdAsync()
+    {
+        throw new NotImplementedException();
     }
 }

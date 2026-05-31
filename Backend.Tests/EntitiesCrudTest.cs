@@ -1,11 +1,11 @@
 ﻿using Backend.Data;
-using Backend.Services;
-using ClassLibrary.Entity.Warehouse;
+using Backend.Services.Warehouse;
+using ClassLibrary.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Tests;
 
-public class WarehouseItemTest
+public class EntitiesCrudTest
 {
     private AppDbContext CreateInMemoryContext()
     {
@@ -45,7 +45,7 @@ public class WarehouseItemTest
         var item = new WarehouseItem { Name = "Test", ItemCode = "TEMP", IsAvailable = true };
         await service.CreateAsync(item);
 
-        var result = await service.DeleteAsync(item.Id);
+        var result = await service.DeleteItemAsync(item.Id);
         var deleted = await service.GetByIdAsync(item.Id);
 
         Assert.True(result);
@@ -124,5 +124,44 @@ public class WarehouseItemTest
 
         var updated = await service.GetByIdAsync(item.Id);
         Assert.False(updated!.IsAvailable);
+    }
+
+    // Vendor creating test
+
+    [Fact]
+    public async Task CreateVendor_WithValidData_SavesVendorToDatabase()
+    {
+        var context = CreateInMemoryContext();
+        var service = new VendorService(context);
+
+        var vendor = new Vendor
+        {
+            Name = "Test Vendor",
+            Country = "PL",
+            Email = "test@vendor.com",
+            TelNumber = "+48123456789"
+        };
+
+        var result = await service.CreateAsync(vendor);
+
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal("Test Vendor", result.Name);
+    }
+
+    [Fact]
+    public async Task DeleteVendor_WhenVendorExists_RemovesVendorSuccessfully()
+    {
+        var context = CreateInMemoryContext();
+        var service = new VendorService(context);
+
+        var vendor = new Vendor { Name = "Test Vendor", Country = "PL" };
+        await service.CreateAsync(vendor);
+
+        var result = await service.DeleteAsync(vendor.Id);
+        var deleted = await service.GetByIdAsync(vendor.Id);
+
+        Assert.True(result);
+        Assert.Null(deleted);
     }
 }
