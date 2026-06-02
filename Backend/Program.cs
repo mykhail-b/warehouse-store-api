@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Services;
 using Backend.Services.Auth;
 using Backend.Services.Customer;
 using Backend.Services.Warehouse;
@@ -18,7 +19,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddIdentity<UserAccount, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -51,6 +52,7 @@ builder.Services.AddScoped<IWarehouseDeliveryService, WarehouseDeliveryService>(
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<ICompanyDataService, CompanyDataService>();
 
 var app = builder.Build();
 

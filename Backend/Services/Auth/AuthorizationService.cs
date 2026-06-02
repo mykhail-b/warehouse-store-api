@@ -8,25 +8,57 @@ using System.Text;
 
 namespace Backend.Services.Auth;
 
+/// <summary>
+/// Defines operations for user registration and authentication.
+/// </summary>
 public interface IAuthorizationService
 {
+    /// <summary>
+    /// Registers a new user account with the provided credentials.
+    /// </summary>
+    /// <param name="dto">The registration data containing email, password, and user details.</param>
+    /// <returns>A JWT token for the newly created account.</returns>
+    /// <exception cref="Exception">Thrown when user creation fails due to validation errors.</exception>
     Task<string> RegisterAsync(RegisterDto dto);
+
+    /// <summary>
+    /// Authenticates a user and returns a JWT token if credentials are valid.
+    /// </summary>
+    /// <param name="dto">The login credentials containing email and password.</param>
+    /// <returns>A JWT token valid for 8 hours if authentication succeeds.</returns>
+    /// <exception cref="Exception">Thrown when email is not found or password is incorrect.</exception>
     Task<string> LoginAsync(LoginDto dto);
 }
 
 /// <summary>
-/// 
+/// Provides services for user registration, authentication, and JWT token issuance.
 /// </summary>
+/// <remarks>
+/// This service utilizes ASP.NET Core Identity for user management and generates 
+/// secure JSON Web Tokens for API authorization.
+/// </remarks>
 public class AuthorizationService : IAuthorizationService
 {
     private readonly UserManager<UserAccount> _userManager;
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthorizationService"/> class.
+    /// </summary>
+    /// <param name="userManager">The ASP.NET Core Identity UserManager for managing user accounts.</param>
+    /// <param name="configuration">The application configuration containing JWT settings.</param>
     public AuthorizationService(UserManager<UserAccount> userManager, IConfiguration configuration)
     {
         _userManager = userManager;
         _configuration = configuration;
     }
+
+    /// <summary>
+    /// Registers a new user account with the provided credentials.
+    /// </summary>
+    /// <param name="dto">The registration data containing email, password, and user details.</param>
+    /// <returns>A JWT token for the newly created account.</returns>
+    /// <exception cref="Exception">Thrown when user creation fails.</exception>
     public async Task<string> RegisterAsync(RegisterDto dto)
     {
         var user = new UserAccount
@@ -45,6 +77,12 @@ public class AuthorizationService : IAuthorizationService
         return await GenerateToken(user);
     }
 
+    /// <summary>
+    /// Authenticates a user and returns a JWT token if credentials are valid.
+    /// </summary>
+    /// <param name="dto">The login credentials containing email and password.</param>
+    /// <returns>A JWT token valid for 8 hours if authentication succeeds.</returns>
+    /// <exception cref="Exception">Thrown when email is not found or password is incorrect.</exception>
     public async Task<string> LoginAsync(LoginDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email)
@@ -56,6 +94,12 @@ public class AuthorizationService : IAuthorizationService
         return await GenerateToken(user);
     }
 
+    /// <summary>
+    /// Generates a JWT token for the specified user.
+    /// </summary>
+    /// <param name="user">The user account to generate the token for.</param>
+    /// <returns>A signed JWT token containing user identity and email claims.</returns>
+    /// <remarks>The token is valid for 8 hours from the time of generation.</remarks>
     private Task<string> GenerateToken(UserAccount user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(

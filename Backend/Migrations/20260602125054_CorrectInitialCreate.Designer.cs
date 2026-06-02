@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260531101946_ModifiedUserAccountEntity")]
-    partial class ModifiedUserAccountEntity
+    [Migration("20260602125054_CorrectInitialCreate")]
+    partial class CorrectInitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,49 @@ namespace Backend.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("ClassLibrary.Entity.CompanyData", b =>
+                {
+                    b.Property<short>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<short>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("RegistryNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CompanyData", "Company");
+                });
 
             modelBuilder.Entity("ClassLibrary.Entity.Employee", b =>
                 {
@@ -52,11 +95,11 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.InboundDelivery", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("ArrivalDate")
                         .HasColumnType("datetime2");
@@ -71,8 +114,8 @@ namespace Backend.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<long>("VendorId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("VendorId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -83,14 +126,14 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.InboundDeliveryItem", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("InboundDeliveryId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("InboundDeliveryId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("PurchasePrice")
                         .HasColumnType("decimal(18,2)");
@@ -98,8 +141,8 @@ namespace Backend.Migrations
                     b.Property<int>("QuantityReceived")
                         .HasColumnType("int");
 
-                    b.Property<long>("WarehouseItemId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("WarehouseItemId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -112,11 +155,11 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.Order", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -137,14 +180,14 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.OrderItem", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("OrderId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -152,8 +195,8 @@ namespace Backend.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<long>("WarehouseItemId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("WarehouseItemId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -166,11 +209,11 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.OutboundDelivery", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("DepartureDate")
                         .HasColumnType("datetime2");
@@ -197,20 +240,20 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.OutboundDeliveryItem", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("OutboundDeliveryId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("OutboundDeliveryId")
+                        .HasColumnType("int");
 
                     b.Property<int>("QuantityShipped")
                         .HasColumnType("int");
 
-                    b.Property<long>("WarehouseItemId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("WarehouseItemId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -299,11 +342,11 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.Vendor", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Country")
                         .IsRequired()
@@ -337,11 +380,11 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("ClassLibrary.Entity.WarehouseItem", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Category")
                         .IsRequired()

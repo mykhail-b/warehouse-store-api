@@ -8,15 +8,17 @@ services:
       - "5000:8080"
     environment:
       - Redis__Connection=redis:6379
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CompanyDb;User Id=sa;Password=StrongPassword123!;TrustServerCertificate=True;
     depends_on:
       - redis
+      - sqlserver
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
     depends_on:
       - backend
 
@@ -24,3 +26,17 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=StrongPassword123!
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+volumes:
+  mssql_data:
