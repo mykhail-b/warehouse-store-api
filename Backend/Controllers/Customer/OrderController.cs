@@ -1,8 +1,8 @@
 ﻿using Backend.Services.Customer;
-using ClassLibrary.Entity;
+using ClassLibrary.Dto;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Backend.Controllers;
+namespace Backend.Controllers.Customer;
 
 /// <summary>
 /// Manages customer orders and order operations.
@@ -14,10 +14,6 @@ public class OrderController : ControllerBase
 {
     private readonly IOrderService _service;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OrderController"/> class.
-    /// </summary>
-    /// <param name="service">The order service for handling order operations.</param>
     public OrderController(IOrderService service)
     {
         _service = service;
@@ -52,9 +48,20 @@ public class OrderController : ControllerBase
     /// <param name="order">The order to create.</param>
     /// <returns>The created order with an assigned ID.</returns>
     [HttpPost]
-    public async Task<IActionResult> Create(Order order)
+    public async Task<IActionResult> Create(CreateOrderDto dto)
     {
-        return Ok(await _service.CreateOrderAsync(order));
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (dto == null)
+        {
+            return BadRequest("Order data is missing.");
+        }
+
+        var result = await _service.CreateOrderAsync(dto);
+        return Ok(result);
     }
 
 
@@ -64,9 +71,9 @@ public class OrderController : ControllerBase
     /// <param name="order">The order with updated information.</param>
     /// <returns>The updated order.</returns>
     [HttpPut]
-    public async Task<IActionResult> Update(Order order)
+    public async Task<IActionResult> Update(UpdateOrderDto dto)
     { 
-        return Ok(await _service.UpdateOrderAsync(order));
+        return Ok(await _service.UpdateOrderAsync(dto));
     }
 
 

@@ -5,18 +5,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Backend.Services.Warehouse;
 
 /// <summary>
-/// Provides services for managing warehouse logistics, including inbound (receiving) 
+/// Provides services for managing simple warehouse logistics
 /// and outbound (shipping) delivery operations.
 /// </summary>
 public interface IWarehouseDeliveryService
 {
-    // --- Inbound Operations ---
-    Task<InboundDelivery> CreateInboundAsync(InboundDelivery delivery);
-    Task<InboundDelivery?> GetInboundByIdAsync(int id);
-    Task<IEnumerable<InboundDelivery>> GetAllInboundAsync();
-
-    // --- Outbound Operations ---
-    Task<OutboundDelivery> CreateOutboundAsync(OutboundDelivery delivery);
+    Task<OutboundDelivery> CreateOutboundAsync(int newOrderId, IEnumerable<OrderItem> items);
     Task<OutboundDelivery?> GetOutboundByIdAsync(int id);
     Task<IEnumerable<OutboundDelivery>> GetAllOutboundAsync();
 }
@@ -29,57 +23,10 @@ public class WarehouseDeliveryService : IWarehouseDeliveryService
 {
     private readonly AppDbContext _context;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WarehouseDeliveryService"/> class.
-    /// </summary>
-    /// <param name="context">The database context for delivery operations.</param>
     public WarehouseDeliveryService(AppDbContext context)
     {
         _context = context;
     }
-
-    /// <summary>
-    /// Creates a new inbound delivery and automatically updates warehouse stock levels.
-    /// </summary>
-    /// <param name="delivery">The inbound delivery containing items and quantities received.</param>
-    /// <returns>The created inbound delivery record.</returns>
-    /// <remarks>Automatically increments warehouse item quantities based on received amounts.</remarks>
-    public async Task<InboundDelivery> CreateInboundAsync(InboundDelivery delivery)
-    {
-        _context.InboundDeliveries.Add(delivery);
-
-        // Update stock levels automatically
-        foreach (var item in delivery.Items)
-        {
-            var warehouseItem = await _context.WarehouseItems.FindAsync(item.WarehouseItemId);
-            if (warehouseItem is not null)
-                warehouseItem.CurrentQuantity += item.QuantityReceived;
-        }
-
-        await _context.SaveChangesAsync();
-        return delivery;
-    }
-
-    /// <summary>
-    /// Retrieves a specific inbound delivery by its ID with related items.
-    /// </summary>
-    /// <param name="id">The ID of the inbound delivery to retrieve.</param>
-    /// <returns>The inbound delivery if found; null otherwise.</returns>
-    public async Task<InboundDelivery?> GetInboundByIdAsync(int id)
-    => await _context.InboundDeliveries
-        .AsNoTracking()
-        .Include(d => d.Items)
-        .FirstOrDefaultAsync(d => d.Id == id);
-
-    /// <summary>
-    /// Retrieves all inbound deliveries with their related items.
-    /// </summary>
-    /// <returns>A collection of all inbound deliveries.</returns>
-    public async Task<IEnumerable<InboundDelivery>> GetAllInboundAsync()
-        => await _context.InboundDeliveries
-            .AsNoTracking()
-            .Include(d => d.Items)
-            .ToListAsync();
 
     /// <summary>
     /// Creates a new outbound delivery and automatically updates warehouse stock levels.
@@ -87,19 +34,57 @@ public class WarehouseDeliveryService : IWarehouseDeliveryService
     /// <param name="delivery">The outbound delivery containing items and quantities to ship.</param>
     /// <returns>The created outbound delivery record.</returns>
     /// <remarks>Automatically decrements warehouse item quantities based on shipped amounts.</remarks>
-    public async Task<OutboundDelivery> CreateOutboundAsync(OutboundDelivery delivery)
+    public async Task<OutboundDelivery> CreateOutboundAsync(int newOrderId, IEnumerable<OrderItem> orderItems)
     {
-        _context.OutboundDeliveries.Add(delivery);
+        var order = await _context.Orders
+            .Include(o => o.User)
+            .FirstOrDefaultAsync(o => o.Id == newOrderId);
 
-        // Update stock levels automatically
-        foreach (var item in delivery.Items)
+        if (order == null)
+            throw new KeyNotFoundException($"Order with ID {newOrderId} not found.");
+
+        string recipientName = order.User != null
+            ? $"{order.User.FirstName} {order.User.LastName}"
+            : "Guest Customer";
+
+        var delivery = new OutboundDelivery
         {
-            var warehouseItem = await _context.WarehouseItems.FindAsync(item.WarehouseItemId);
-            if (warehouseItem is not null)
-                warehouseItem.CurrentQuantity -= item.QuantityShipped;
+            OrderId = newOrderId,
+            DepartureDate = DateTime.UtcNow,
+            ShippingNumber = Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+            DestinationAddress = order.ShippingAddress,
+            RecipientName = recipientName,
+            Items = orderItems.Select(oi => new OutboundDeliveryItem
+            {
+                WarehouseItemId = oi.WarehouseItemId,
+                QuantityShipped = oi.Quantity
+            }).ToList()
+        };
+
+        var itemsToValidate = new List<(WarehouseItem Item, int Quantity)>();
+
+        foreach (var deliveryItem in delivery.Items)
+        {
+            var warehouseItem = await _context.WarehouseItems.FindAsync(deliveryItem.WarehouseItemId);
+            if (warehouseItem == null)
+                throw new KeyNotFoundException($"Warehouse item {deliveryItem.WarehouseItemId} not found.");
+
+            if (warehouseItem.CurrentQuantity < deliveryItem.QuantityShipped)
+                return null!;
+
+            itemsToValidate.Add((warehouseItem, deliveryItem.QuantityShipped));
         }
 
+        foreach (var pair in itemsToValidate)
+        {
+            pair.Item.CurrentQuantity -= pair.Quantity;
+            if (pair.Item.CurrentQuantity == 0)
+                pair.Item.IsAvailable = false;
+        }
+
+        _context.OutboundDeliveries.Add(delivery);
         await _context.SaveChangesAsync();
+
         return delivery;
     }
 

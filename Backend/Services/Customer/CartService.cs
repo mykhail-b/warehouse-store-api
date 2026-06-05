@@ -46,10 +46,6 @@ public class CartService : ICartService
 {
     private readonly IDistributedCache _cache;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CartService"/> class.
-    /// </summary>
-    /// <param name="cache">The distributed cache for storing cart data.</param>
     public CartService(IDistributedCache cache)
     {
         _cache = cache;

@@ -14,10 +14,6 @@ namespace Backend.Controllers.Auth
     {
         private readonly IAuthorizationService _authService;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AuthController"/> class.
-        /// </summary>
-        /// <param name="authService">The authorization service for handling authentication operations.</param>
         public AuthController(IAuthorizationService authService)
         {
             _authService = authService;

@@ -11,7 +11,6 @@ namespace Backend.Services.Warehouse;
 /// </summary>
 public interface IWarehouseItemService
 {
-    // --- Admin/Employee Operations ---
     Task<WarehouseItem?> GetByIdAsync(int id);
     Task<IEnumerable<WarehouseItem>> GetAllAsync();
     Task<WarehouseItem> CreateAsync(WarehouseItem item);
@@ -37,10 +36,6 @@ public class WarehouseItemService : IWarehouseItemService
 {
     private readonly AppDbContext _context;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WarehouseItemService"/> class.
-    /// </summary>
-    /// <param name="context">The database context for warehouse item operations.</param>
     public WarehouseItemService(AppDbContext context)
     {
         _context = context;

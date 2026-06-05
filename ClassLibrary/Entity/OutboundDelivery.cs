@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClassLibrary.Entity;
 
@@ -10,37 +11,28 @@ namespace ClassLibrary.Entity;
 [Table("OutboundDelivery", Schema = "Warehouse")]
 public class OutboundDelivery
 {
-    /// <summary>
-    /// Gets or sets the delivery's unique identifier.
-    /// </summary>
+    [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    /// <summary>
-    /// Gets or sets the shipping number for tracking (max 50 characters).
-    /// </summary>
+    [JsonPropertyName("orderId")]
+    public int OrderId { get; set; }
+    public virtual Order Order { get; set; } = null!;
+
+    [JsonPropertyName("shippingNumber")]
     [MaxLength(50)]
     public required string ShippingNumber { get; set; }
-
-    /// <summary>
-    /// Gets or sets the shipment departure date.
-    /// </summary>
+    
+    [JsonPropertyName("departureDate")]
     public DateTime DepartureDate { get; set; }
 
-    /// <summary>
-    /// Gets or sets the destination address (max 250 characters).
-    /// </summary>
+    [JsonPropertyName("destinationAddress")]
     [MaxLength(250)]
     public required string DestinationAddress { get; set; }
 
-    /// <summary>
-    /// Gets or sets the recipient name (max 100 characters).
-    /// </summary>
+    [JsonPropertyName("recipientName")]
     [MaxLength(100)]
     public string RecipientName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the collection of items in this shipment.
-    /// </summary>
     public virtual ICollection<OutboundDeliveryItem> Items { get; set; } = new List<OutboundDeliveryItem>();
 }
 
@@ -50,33 +42,19 @@ public class OutboundDelivery
 [Table("OutboundDeliveryItem", Schema = "Warehouse")]
 public class OutboundDeliveryItem
 {
-    /// <summary>
-    /// Gets or sets the item's unique identifier.
-    /// </summary>
+    [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    /// <summary>
-    /// Gets or sets the outbound delivery ID this item belongs to.
-    /// </summary>
+    [JsonPropertyName("outboundDeliveryId")]
     public int OutboundDeliveryId { get; set; }
 
-    /// <summary>
-    /// Gets or sets the associated outbound delivery.
-    /// </summary>
     public virtual OutboundDelivery OutboundDelivery { get; set; } = null!;
 
-    /// <summary>
-    /// Gets or sets the warehouse item ID.
-    /// </summary>
+    [JsonPropertyName("warehouseItemId")]
     public int WarehouseItemId { get; set; }
 
-    /// <summary>
-    /// Gets or sets the associated warehouse item.
-    /// </summary>
     public virtual WarehouseItem WarehouseItem { get; set; } = null!;
 
-    /// <summary>
-    /// Gets or sets the quantity shipped.
-    /// </summary>
+    [JsonPropertyName("quantityShipped")]
     public int QuantityShipped { get; set; }
 }

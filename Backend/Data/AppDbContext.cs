@@ -14,57 +14,17 @@ namespace Backend.Data;
 /// </remarks>
 public class AppDbContext : IdentityDbContext<UserAccount>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AppDbContext"/> class.
-    /// </summary>
-    /// <param name="options">The options for configuring the context.</param>
     public AppDbContext(DbContextOptions options) : base(options)
     {
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AppDbContext"/> class with no parameters.
-    /// Typically used for design-time scenarios.
-    /// </summary>
     protected AppDbContext()
     {
     }
 
-    /// <summary>
-    /// Gets or sets the collection of employees.
-    /// </summary>
-    public DbSet<Employee> Employees { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of warehouse items in inventory.
-    /// </summary>
     public DbSet<WarehouseItem> WarehouseItems { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of vendors.
-    /// </summary>
-    public DbSet<Vendor> Vendors { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of inbound deliveries (incoming inventory).
-    /// </summary>
-    public DbSet<InboundDelivery> InboundDeliveries { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of outbound deliveries (outgoing inventory).
-    /// </summary>
     public DbSet<OutboundDelivery> OutboundDeliveries { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of customer orders.
-    /// </summary>
     public DbSet<Order> Orders { get; set; }
-
-    /// <summary>
-    /// Gets or sets the collection of company data and information.
-    /// </summary>
-    public DbSet<CompanyData> CompanyData { get; set; }
-
 
     /// <summary>
     /// Configures the model relationships and constraints.

@@ -2,7 +2,7 @@
 using ClassLibrary.Entity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Backend.Controllers;
+namespace Backend.Controllers.Admin;
 
 /// <summary>
 /// Manages warehouse inventory items and their operations.
@@ -14,10 +14,6 @@ public class WarehouseItemController : ControllerBase
 {
     private readonly IWarehouseItemService _service;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WarehouseItemController"/> class.
-    /// </summary>
-    /// <param name="service">The warehouse item service for handling inventory operations.</param>
     public WarehouseItemController(IWarehouseItemService service)
     {
         _service = service;

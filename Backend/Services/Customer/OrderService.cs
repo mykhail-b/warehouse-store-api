@@ -1,4 +1,6 @@
 ﻿using Backend.Data;
+using Backend.Services.Warehouse;
+using ClassLibrary.Dto;
 using ClassLibrary.Entity;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +16,7 @@ public interface IOrderService
     /// </summary>
     /// <param name="order">The order to create.</param>
     /// <returns>The created order with an assigned ID.</returns>
-    Task<Order> CreateOrderAsync(Order order);
+    Task<Order> CreateOrderAsync(CreateOrderDto dto);
 
     /// <summary>
     /// Retrieves a specific order by its ID.
@@ -41,7 +43,7 @@ public interface IOrderService
     /// </summary>
     /// <param name="order">The order with updated information.</param>
     /// <returns>The updated order.</returns>
-    Task<Order> UpdateOrderAsync(Order order);
+    Task<Order> UpdateOrderAsync(UpdateOrderDto dto);
 }
 
 /// <summary>
@@ -50,14 +52,12 @@ public interface IOrderService
 public class OrderService : IOrderService
 {
     private readonly AppDbContext _context;
+    private readonly IWarehouseDeliveryService _warehouseDeliveryService;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OrderService"/> class.
-    /// </summary>
-    /// <param name="context">The database context for order operations.</param>
-    public OrderService(AppDbContext context)
+    public OrderService(AppDbContext context, IWarehouseDeliveryService warehouseDeliveryService)
     {
         _context = context;
+        _warehouseDeliveryService = warehouseDeliveryService;
     }
 
     /// <summary>
@@ -65,11 +65,41 @@ public class OrderService : IOrderService
     /// </summary>
     /// <param name="order">The order to create.</param>
     /// <returns>The created order with an assigned ID.</returns>
-    public async Task<Order> CreateOrderAsync(Order order)
+    public async Task<Order> CreateOrderAsync(CreateOrderDto dto)
     {
-        await _context.Orders.AddAsync(order);
-        await _context.SaveChangesAsync();
-        return order;
+        foreach (var item in dto.Items)
+        {
+            var warehouseItem = await _context.WarehouseItems.FindAsync(item.WarehouseItemId);
+            if (warehouseItem is null || warehouseItem.CurrentQuantity < item.Quantity)
+                throw new InvalidOperationException($"Not enough goods in stock! ID: {item.WarehouseItemId}");
+        }
+
+        var newOrder = new Order {
+            UserId = dto.UserId,
+            ShippingAddress = dto.ShippingAddress,
+            CreatedAt = DateTime.UtcNow,
+            Status = OrderStatus.Pending,
+            Items = dto.Items.Select(i => new OrderItem
+            {
+                WarehouseItemId = i.WarehouseItemId,
+                Quantity = i.Quantity
+            }).ToList()
+        };
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            await _context.Orders.AddAsync(newOrder);
+            await _context.SaveChangesAsync();
+            await _warehouseDeliveryService.CreateOutboundAsync(newOrder.Id, newOrder.Items);
+            await transaction.CommitAsync();
+            return newOrder;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     /// <summary>
@@ -111,10 +141,17 @@ public class OrderService : IOrderService
     /// </summary>
     /// <param name="order">The order with updated information.</param>
     /// <returns>The updated order.</returns>
-    public async Task<Order> UpdateOrderAsync(Order order)
+    public async Task<Order> UpdateOrderAsync(UpdateOrderDto dto)
     {
-        _context.Orders.Update(order);
+        var existing = await _context.Orders.FindAsync(dto.Id);
+        if (existing is null)
+            throw new KeyNotFoundException($"Order {dto.Id} not found");
+
+        existing.Status = dto.Status;
+        existing.ShippingAddress = dto.ShippingAddress;
+        existing.UserId = dto.UserId;
+
         await _context.SaveChangesAsync();
-        return order;
+        return existing;
     }
 }

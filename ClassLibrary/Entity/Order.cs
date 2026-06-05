@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClassLibrary.Entity;
 
@@ -9,34 +10,30 @@ namespace ClassLibrary.Entity;
 [Table("Order", Schema = "Warehouse")]
 public class Order
 {
-    /// <summary>
-    /// Gets or sets the order's unique identifier.
-    /// </summary>
+    [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    /// <summary>
-    /// Gets or sets the user ID who placed the order.
-    /// </summary>
-    public string UserId { get; set; } = string.Empty;
+    [JsonPropertyName("userId")]
 
-    /// <summary>
-    /// Gets or sets the associated user account.
-    /// </summary>
-    public virtual UserAccount User { get; set; } = null!;
+    // For registered users, we can link to their account via UserId. For guest customers, this will be null.
+    public string? UserId { get; set; }
+    public virtual UserAccount? User { get; set; }
 
-    /// <summary>
-    /// Gets or sets the order creation date and time.
-    /// </summary>
+    // For guest customers, we can store their name directly in the order record
+    [JsonPropertyName("customerName")]
+    public string? CustomerName { get; set; }
+    [JsonPropertyName("customerEmail")]
+    public string? CustomerEmail { get; set; }
+
+    [JsonPropertyName("shippingAddress")]
+    public string ShippingAddress { get; set; } = string.Empty;
+
+    [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    /// <summary>
-    /// Gets or sets the current status of the order.
-    /// </summary>
+    [JsonPropertyName("status")]
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
-    /// <summary>
-    /// Gets or sets the collection of items in this order.
-    /// </summary>
     public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 }
 
@@ -46,39 +43,23 @@ public class Order
 [Table("OrderItem", Schema = "Warehouse")]
 public class OrderItem
 {
-    /// <summary>
-    /// Gets or sets the item's unique identifier.
-    /// </summary>
+    [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    /// <summary>
-    /// Gets or sets the order ID this item belongs to.
-    /// </summary>
+    [JsonPropertyName("orderId")]
     public int OrderId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the associated order.
-    /// </summary>
+    [JsonIgnore]
     public virtual Order Order { get; set; } = null!;
 
-    /// <summary>
-    /// Gets or sets the warehouse item ID.
-    /// </summary>
+    [JsonPropertyName("warehouseItemId")]
     public int WarehouseItemId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the associated warehouse item.
-    /// </summary>
+    [JsonIgnore]
     public virtual WarehouseItem WarehouseItem { get; set; } = null!;
 
-    /// <summary>
-    /// Gets or sets the quantity ordered.
-    /// </summary>
+    [JsonPropertyName("quantity")]
     public int Quantity { get; set; }
 
-    /// <summary>
-    /// Gets or sets the price per unit at the time of order.
-    /// </summary>
+    [JsonPropertyName("price")]
     [Column(TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }
 }
@@ -88,14 +69,8 @@ public class OrderItem
 /// </summary>
 public enum OrderStatus
 {
-    /// <summary>Order pending processing</summary>
     Pending,
-    /// <summary>Order currently being processed</summary>
-    Processing,
-    /// <summary>Order has been shipped</summary>
     Shipped,
-    /// <summary>Order has been delivered</summary>
     Delivered,
-    /// <summary>Order has been cancelled</summary>
     Cancelled
 }

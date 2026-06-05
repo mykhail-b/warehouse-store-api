@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClassLibrary.Entity;
 
@@ -8,9 +9,7 @@ namespace ClassLibrary.Entity;
 /// </summary>
 public enum CurrencyType
 {
-    /// <summary>Euro currency</summary>
     EUR,
-    /// <summary>US Dollar currency</summary>
     USD
 }
 
@@ -21,85 +20,56 @@ public enum CurrencyType
 [Table("Item", Schema = "Warehouse")]
 public class WarehouseItem
 {
-    /// <summary>
-    /// Gets or sets the item's unique identifier.
-    /// </summary>
+
+    [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    /// <summary>
-    /// Gets or sets the item's name (max 100 characters).
-    /// </summary>
+    [JsonPropertyName("name")]
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the item's detailed description (max 500 characters).
-    /// </summary>
+    [JsonPropertyName("description")]
     [MaxLength(500)]
     public string Description { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the item's category (max 50 characters).
-    /// </summary>
+    
+    [JsonPropertyName("category")]
     [MaxLength(50)]
     public string Category { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the current quantity in stock.
-    /// </summary>
+    [JsonPropertyName("currentQuantity")]
     public int CurrentQuantity { get; set; }
 
-    /// <summary>
-    /// Gets or sets the minimum quantity threshold for reordering.
-    /// </summary>
+    [JsonPropertyName("minQuantity")]
     public int MinQuantity { get; set; }
 
-    /// <summary>
-    /// Gets or sets the maximum quantity allowed in stock.
-    /// </summary>
+    [JsonPropertyName("maxQuantity")]
     public int MaxQuantity { get; set; }
 
-    /// <summary>
-    /// Gets or sets the item's weight in kilograms.
-    /// </summary>
+    [JsonPropertyName("weightKg")]
     [Column(TypeName = "decimal(12,3)")]
     public decimal WeightKg { get; set; }
 
-    /// <summary>
-    /// Gets or sets the item's volume in cubic meters.
-    /// </summary>
+    [JsonPropertyName("volumeCbm")]
     [Column(TypeName = "decimal(12,4)")]
     public decimal VolumeCbm { get; set; }
-
-    /// <summary>
-    /// Gets or sets the item's cost.
-    /// </summary>
+    
+    [JsonPropertyName("cost")]
     [Column(TypeName = "decimal(18,2)")]
     public decimal Cost { get; set; }
 
-    /// <summary>
-    /// Gets or sets the currency type for the cost.
-    /// </summary>
+    [JsonPropertyName("currency")]
     public CurrencyType Currency { get; set; } = CurrencyType.EUR;
 
-    /// <summary>
-    /// Gets or sets the unique item code.
-    /// </summary>
+    [JsonPropertyName("itemCode")]
     [MaxLength(50)]
     public required string ItemCode { get; set; }
 
-    /// <summary>
-    /// Gets or sets the creation date and time.
-    /// </summary>
+    [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    /// <summary>
-    /// Gets or sets the last modification date and time.
-    /// </summary>
+    [JsonPropertyName("changedAt")]
     public DateTime ChangedAt { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the item is available for use.
-    /// </summary>
+    [JsonPropertyName("isAvailable")]
     public bool IsAvailable { get; set; }
 }
