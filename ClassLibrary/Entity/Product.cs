@@ -4,21 +4,14 @@ using System.Text.Json.Serialization;
 
 namespace ClassLibrary.Entity;
 
-/// <summary>
-/// Specifies the currency type for pricing.
-/// </summary>
 public enum CurrencyType
 {
     EUR,
     USD
 }
 
-/// <summary>
-/// Represents an item in the warehouse inventory.
-/// Tracks item details, quantity, dimensions, cost, and availability status.
-/// </summary>
-[Table("Item", Schema = "Warehouse")]
-public class WarehouseItem
+[Table("Product", Schema = "Warehouse")]
+public class Product
 {
 
     [JsonPropertyName("id")]
@@ -49,9 +42,9 @@ public class WarehouseItem
     [Column(TypeName = "decimal(12,3)")]
     public decimal WeightKg { get; set; }
 
-    [JsonPropertyName("volumeCbm")]
-    [Column(TypeName = "decimal(12,4)")]
-    public decimal VolumeCbm { get; set; }
+    //[JsonPropertyName("volumeCbm")]
+    //[Column(TypeName = "decimal(12,4)")]
+    //public decimal VolumeCbm { get; set; }
     
     [JsonPropertyName("cost")]
     [Column(TypeName = "decimal(18,2)")]

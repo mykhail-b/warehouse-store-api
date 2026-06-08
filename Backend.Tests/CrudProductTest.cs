@@ -5,19 +5,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Tests;
 
-public class WarehouseItemTests : IDisposable
+public class CrudProductTest : IDisposable
 {
     private readonly AppDbContext _context;
-    private readonly WarehouseItemService _service;
+    private readonly IProductService _service;
 
-    public WarehouseItemTests()
+    public CrudProductTest()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
         _context = new AppDbContext(options);
-        _service = new WarehouseItemService(_context);
+        _service = new ProductService(_context);
     }
 
     // --- CreateAsync ---
@@ -212,7 +212,7 @@ public class WarehouseItemTests : IDisposable
 
     // --- Helpers ---
 
-    private static WarehouseItem MakeItem(string name) => new()
+    private static Product MakeItem(string name) => new()
     {
         Name = name,
         ItemCode = "TEMP",

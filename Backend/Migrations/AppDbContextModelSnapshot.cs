@@ -22,6 +22,30 @@ namespace Backend.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ClassLibrary.Entity.Delivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("orderId");
+
+                    b.Property<DateTime>("ShippedAt")
+                        .HasColumnType("datetime2")
+                        .HasJsonPropertyName("shippedAt");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("Delivery", "Warehouse");
+                });
+
             modelBuilder.Entity("ClassLibrary.Entity.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -48,9 +72,18 @@ namespace Backend.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasJsonPropertyName("shippingAddress");
 
+                    b.Property<string>("ShippingNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasJsonPropertyName("shippingNumber");
+
                     b.Property<int>("Status")
                         .HasColumnType("int")
                         .HasJsonPropertyName("status");
+
+                    b.Property<string>("StripeSessionId")
+                        .HasColumnType("nvarchar(max)")
+                        .HasJsonPropertyName("stripeSessionId");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)")
@@ -80,24 +113,24 @@ namespace Backend.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasJsonPropertyName("price");
 
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("productId");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int")
                         .HasJsonPropertyName("quantity");
 
-                    b.Property<int>("WarehouseItemId")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("warehouseItemId");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("WarehouseItemId");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("OrderItem", "Warehouse");
                 });
 
-            modelBuilder.Entity("ClassLibrary.Entity.OutboundDelivery", b =>
+            modelBuilder.Entity("ClassLibrary.Entity.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -106,67 +139,69 @@ namespace Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("DepartureDate")
-                        .HasColumnType("datetime2")
-                        .HasJsonPropertyName("departureDate");
-
-                    b.Property<string>("DestinationAddress")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)")
-                        .HasJsonPropertyName("destinationAddress");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("orderId");
-
-                    b.Property<string>("RecipientName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasJsonPropertyName("recipientName");
-
-                    b.Property<string>("ShippingNumber")
+                    b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
-                        .HasJsonPropertyName("shippingNumber");
+                        .HasJsonPropertyName("category");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2")
+                        .HasJsonPropertyName("changedAt");
+
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(18,2)")
+                        .HasJsonPropertyName("cost");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasJsonPropertyName("createdAt");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("currency");
+
+                    b.Property<int>("CurrentQuantity")
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("currentQuantity");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasJsonPropertyName("description");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit")
+                        .HasJsonPropertyName("isAvailable");
+
+                    b.Property<string>("ItemCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasJsonPropertyName("itemCode");
+
+                    b.Property<int>("MaxQuantity")
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("maxQuantity");
+
+                    b.Property<int>("MinQuantity")
+                        .HasColumnType("int")
+                        .HasJsonPropertyName("minQuantity");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasJsonPropertyName("name");
+
+                    b.Property<decimal>("WeightKg")
+                        .HasColumnType("decimal(12,3)")
+                        .HasJsonPropertyName("weightKg");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OutboundDelivery", "Warehouse");
-                });
-
-            modelBuilder.Entity("ClassLibrary.Entity.OutboundDeliveryItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("OutboundDeliveryId")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("outboundDeliveryId");
-
-                    b.Property<int>("QuantityShipped")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("quantityShipped");
-
-                    b.Property<int>("WarehouseItemId")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("warehouseItemId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OutboundDeliveryId");
-
-                    b.HasIndex("WarehouseItemId");
-
-                    b.ToTable("OutboundDeliveryItem", "Warehouse");
+                    b.ToTable("Product", "Warehouse");
                 });
 
             modelBuilder.Entity("ClassLibrary.Entity.UserAccount", b =>
@@ -243,84 +278,6 @@ namespace Backend.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("ClassLibrary.Entity.WarehouseItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasJsonPropertyName("category");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("datetime2")
-                        .HasJsonPropertyName("changedAt");
-
-                    b.Property<decimal>("Cost")
-                        .HasColumnType("decimal(18,2)")
-                        .HasJsonPropertyName("cost");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasJsonPropertyName("createdAt");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("currency");
-
-                    b.Property<int>("CurrentQuantity")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("currentQuantity");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasJsonPropertyName("description");
-
-                    b.Property<bool>("IsAvailable")
-                        .HasColumnType("bit")
-                        .HasJsonPropertyName("isAvailable");
-
-                    b.Property<string>("ItemCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasJsonPropertyName("itemCode");
-
-                    b.Property<int>("MaxQuantity")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("maxQuantity");
-
-                    b.Property<int>("MinQuantity")
-                        .HasColumnType("int")
-                        .HasJsonPropertyName("minQuantity");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasJsonPropertyName("name");
-
-                    b.Property<decimal>("VolumeCbm")
-                        .HasColumnType("decimal(12,4)")
-                        .HasJsonPropertyName("volumeCbm");
-
-                    b.Property<decimal>("WeightKg")
-                        .HasColumnType("decimal(12,3)")
-                        .HasJsonPropertyName("weightKg");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Item", "Warehouse");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -456,6 +413,17 @@ namespace Backend.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ClassLibrary.Entity.Delivery", b =>
+                {
+                    b.HasOne("ClassLibrary.Entity.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("ClassLibrary.Entity.Order", b =>
                 {
                     b.HasOne("ClassLibrary.Entity.UserAccount", "User")
@@ -473,45 +441,15 @@ namespace Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ClassLibrary.Entity.WarehouseItem", "WarehouseItem")
+                    b.HasOne("ClassLibrary.Entity.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("WarehouseItemId")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Order");
 
-                    b.Navigation("WarehouseItem");
-                });
-
-            modelBuilder.Entity("ClassLibrary.Entity.OutboundDelivery", b =>
-                {
-                    b.HasOne("ClassLibrary.Entity.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("ClassLibrary.Entity.OutboundDeliveryItem", b =>
-                {
-                    b.HasOne("ClassLibrary.Entity.OutboundDelivery", "OutboundDelivery")
-                        .WithMany("Items")
-                        .HasForeignKey("OutboundDeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ClassLibrary.Entity.WarehouseItem", "WarehouseItem")
-                        .WithMany()
-                        .HasForeignKey("WarehouseItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OutboundDelivery");
-
-                    b.Navigation("WarehouseItem");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -566,11 +504,6 @@ namespace Backend.Migrations
                 });
 
             modelBuilder.Entity("ClassLibrary.Entity.Order", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("ClassLibrary.Entity.OutboundDelivery", b =>
                 {
                     b.Navigation("Items");
                 });

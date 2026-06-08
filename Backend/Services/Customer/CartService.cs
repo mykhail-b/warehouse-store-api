@@ -1,113 +1,115 @@
 ﻿using ClassLibrary.Dto;
+using ClassLibrary.Settings;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace Backend.Services.Customer;
 
-/// <summary>
-/// Defines operations for managing user shopping carts using distributed cache.
-/// </summary>
+
 public interface ICartService
 {
-    /// <summary>
-    /// Retrieves the shopping cart for a specific user.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <returns>A list of items in the user's cart; empty list if no cart exists.</returns>
-    Task<List<CartItemDto>> GetCartAsync(string userId);
-
-    /// <summary>
-    /// Adds an item to the user's shopping cart.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <param name="item">The item to add to the cart.</param>
-    /// <remarks>If the item already exists in the cart, a duplicate entry is added.</remarks>
-    Task AddItemAsync(string userId, CartItemDto item);
-
-    /// <summary>
-    /// Removes all items with the specified ID from the user's cart.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <param name="itemId">The ID of the item to remove.</param>
-    Task RemoveItemAsync(string userId, int itemId);
-
-    /// <summary>
-    /// Clears all items from the user's shopping cart.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    Task ClearCartAsync(string userId);
+    Task<List<CartItemDto>> GetCartAsync();
+    Task AddItemAsync(CartItemDto item);
+    Task RemoveItemAsync(int itemId);
+    Task ClearCartAsync();
 }
 
-/// <summary>
-/// Implementation of <see cref="ICartService"/> using distributed cache for cart storage.
-/// Cart data persists for 1 day in the cache before automatic expiration.
-/// </summary>
 public class CartService : ICartService
 {
     private readonly IDistributedCache _cache;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly CookieSettings _cookieSettings;
+    private const string CartCookieName = "Warehouse_Cart_Id";
 
-    public CartService(IDistributedCache cache)
+    public CartService(
+        IDistributedCache cache,
+        IHttpContextAccessor httpContextAccessor,
+        IOptions<CookieSettings> cookieSettingsOptions)
     {
         _cache = cache;
+        _httpContextAccessor = httpContextAccessor;
+        _cookieSettings = cookieSettingsOptions.Value;
     }
 
-    /// <summary>
-    /// Retrieves the shopping cart for a specific user.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <returns>A list of cart items; empty list if cache is empty or expired.</returns>
-    public async Task<List<CartItemDto>> GetCartAsync(string userId)
+    public async Task<List<CartItemDto>> GetCartAsync()
     {
-        var cached = await _cache.GetStringAsync($"cart:{userId}");
+        var cartId = GetOrCreateCartId();
+        var cached = await _cache.GetStringAsync($"cart:{cartId}");
+
         if (cached == null) return new List<CartItemDto>();
         return JsonSerializer.Deserialize<List<CartItemDto>>(cached)!;
     }
 
-    /// <summary>
-    /// Adds an item to the user's shopping cart.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <param name="item">The item to add to the cart.</param>
-    public async Task AddItemAsync(string userId, CartItemDto item)
+    public async Task AddItemAsync(CartItemDto item)
     {
-        var cart = await GetCartAsync(userId);
+        var cart = await GetCartAsync();
         cart.Add(item);
-        await SaveCartAsync(userId, cart);
+        await SaveCartAsync(cart);
     }
 
-    /// <summary>
-    /// Removes all instances of an item from the user's cart.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <param name="itemId">The ID of the item to remove.</param>
-    public async Task RemoveItemAsync(string userId, int itemId)
+    public async Task RemoveItemAsync(int itemId)
     {
-        var cart = await GetCartAsync(userId);
+        var cart = await GetCartAsync();
         cart.RemoveAll(i => i.ItemId == itemId);
-        await SaveCartAsync(userId, cart);
+        await SaveCartAsync(cart);
     }
 
-    /// <summary>
-    /// Clears the entire shopping cart for a user.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    public async Task ClearCartAsync(string userId)
+    public async Task ClearCartAsync()
     {
-        await _cache.RemoveAsync($"cart:{userId}");
+        var cartId = GetOrCreateCartId();
+        await _cache.RemoveAsync($"cart:{cartId}");
+
+        _httpContextAccessor.HttpContext?.Response.Cookies.Delete(CartCookieName);
     }
 
-    /// <summary>
-    /// Saves the cart to the distributed cache with a 1-day expiration.
-    /// </summary>
-    /// <param name="userId">The unique identifier of the user.</param>
-    /// <param name="cart">The cart items to save.</param>
-    private async Task SaveCartAsync(string userId, List<CartItemDto> cart)
+    // Internal method of storing data in Redis
+    private async Task SaveCartAsync(List<CartItemDto> cart)
     {
-        await _cache.SetStringAsync($"cart:{userId}",
+        var cartId = GetOrCreateCartId();
+
+        await _cache.SetStringAsync($"cart:{cartId}",
             JsonSerializer.Serialize(cart),
             new DistributedCacheEntryOptions
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
+                // The lifetime of the Redis bucket is taken from our general appsettings settings.
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_cookieSettings.DefaultExpirationDays)
             });
+    }
+    private string GetOrCreateCartId()
+    {
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null) throw new InvalidOperationException("HTTP context is unavailable.");
+
+        // Checking if the browser has sent the shopping cart cookie
+        if (context.Request.Cookies.TryGetValue(CartCookieName, out var cartId) && !string.IsNullOrEmpty(cartId))
+        {
+            return cartId;
+        }
+
+        // If there is no cookie, we create a new unique cart token.
+        var newCartId = Guid.NewGuid().ToString();
+
+        // Convert SameSite from a settings string to an Enum
+        var sameSiteMode = _cookieSettings.SameSite switch
+        {
+            "Strict" => SameSiteMode.Strict,
+            "Lax" => SameSiteMode.Lax,
+            _ => SameSiteMode.None
+        };
+
+        // Implementing security options based on appsettings.json.
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = _cookieSettings.HttpOnly,
+            Secure = _cookieSettings.Secure,
+            Expires = DateTime.UtcNow.AddDays(_cookieSettings.DefaultExpirationDays),
+            SameSite = sameSiteMode
+        };
+
+        // Embed a cookie into the browser's response
+        context.Response.Cookies.Append(CartCookieName, newCartId, cookieOptions);
+
+        return newCartId;
     }
 }

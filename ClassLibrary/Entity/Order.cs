@@ -3,10 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace ClassLibrary.Entity;
 
-/// <summary>
-/// Represents a customer order.
-/// Tracks order metadata including creation date, status, and associated items.
-/// </summary>
 [Table("Order", Schema = "Warehouse")]
 public class Order
 {
@@ -14,19 +10,23 @@ public class Order
     public int Id { get; set; }
 
     [JsonPropertyName("userId")]
-
-    // For registered users, we can link to their account via UserId. For guest customers, this will be null.
     public string? UserId { get; set; }
     public virtual UserAccount? User { get; set; }
 
-    // For guest customers, we can store their name directly in the order record
     [JsonPropertyName("customerName")]
     public string? CustomerName { get; set; }
+
     [JsonPropertyName("customerEmail")]
     public string? CustomerEmail { get; set; }
 
     [JsonPropertyName("shippingAddress")]
-    public string ShippingAddress { get; set; } = string.Empty;
+    public required string ShippingAddress { get; set; }
+
+    [JsonPropertyName("shippingNumber")]
+    public required string ShippingNumber { get; set; }
+
+    [JsonPropertyName("stripeSessionId")]
+    public string? StripeSessionId { get; set; }
 
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -35,11 +35,13 @@ public class Order
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
     public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+
+    [JsonPropertyName("totalPrice")]
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalPrice => Items?.Sum(item => item.Price * item.Quantity) ?? 0;
 }
 
-/// <summary>
-/// Represents an item within an order.
-/// </summary>
+
 [Table("OrderItem", Schema = "Warehouse")]
 public class OrderItem
 {
@@ -49,12 +51,13 @@ public class OrderItem
     [JsonPropertyName("orderId")]
     public int OrderId { get; set; }
     [JsonIgnore]
-    public virtual Order Order { get; set; } = null!;
+    public virtual Order? Order { get; set; }
 
-    [JsonPropertyName("warehouseItemId")]
-    public int WarehouseItemId { get; set; }
+    [JsonPropertyName("productId")]
+    public int ProductId { get; set; }
+
     [JsonIgnore]
-    public virtual WarehouseItem WarehouseItem { get; set; } = null!;
+    public virtual Product? Product { get; set; }
 
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; }
@@ -64,9 +67,6 @@ public class OrderItem
     public decimal Price { get; set; }
 }
 
-/// <summary>
-/// Specifies the status of an order.
-/// </summary>
 public enum OrderStatus
 {
     Pending,

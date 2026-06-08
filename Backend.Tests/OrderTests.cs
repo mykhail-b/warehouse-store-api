@@ -1,262 +1,102 @@
 ﻿using Backend.Data;
-using Backend.Services.Customer;
 using Backend.Services.Warehouse;
 using ClassLibrary.Dto;
 using ClassLibrary.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Moq;
+using System.Text.Json;
 
 namespace Backend.Tests;
 
-public class OrderTests : IDisposable
+public class OrderServiceTests
 {
-    private readonly AppDbContext _context;
-    private readonly OrderService _service;
-    private readonly WarehouseItemService _itemService;
-
-    public OrderTests()
+    private AppDbContext GetDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
-        _context = new AppDbContext(options);
-        _itemService = new WarehouseItemService(_context);
-
-        var deliveryService = new WarehouseDeliveryService(_context);
-        _service = new OrderService(_context, deliveryService);
+        return new AppDbContext(options);
     }
 
-    // --- Helpers ---
-
-    private async Task<WarehouseItem> CreateWarehouseItemAsync(int quantity = 100)
+    [Fact]
+    public async Task CreateOrderAsync_ValidDto_CreatesOrderAndDecrementsWarehouseQuantity()
     {
-        var item = new WarehouseItem
+        using var context = GetDbContext();
+
+        var product = new Product { Id = 1, CurrentQuantity = 10, ItemCode = $"ITEM-{DateTime.UtcNow:yyyyMMdd}" };
+        await context.Products.AddAsync(product);
+        await context.SaveChangesAsync();
+
+        var orderService = new OrderService(context);
+
+        var itemsDto = new List<OrderItemDto>
         {
-            Name = "Test Item",
-            ItemCode = "TEMP",
-            CurrentQuantity = quantity,
-            IsAvailable = true
+            new OrderItemDto { ProductId = 1, Quantity = 3, Price = 100m }
         };
-        return await _itemService.CreateAsync(item);
-    }
+        var serializedItems = JsonSerializer.Serialize(itemsDto);
 
-    private CreateOrderDto MakeOrderDto(int warehouseItemId, int quantity = 5) => new()
-    {
-        UserId = "user123",
-        ShippingAddress = "Test Street 123",
-        Items = new List<CreateOrderItemDto>
+        var orderCreateDto = new OrderCreateDto
         {
-            new() { WarehouseItemId = warehouseItemId, Quantity = quantity, Price = 99.99m }
-        }
-    };
-
-    // --- CreateOrderAsync ---
-
-    [Fact]
-    public async Task CreateOrderAsync_WithValidData_ReturnsOrderWithId()
-    {
-        var item = await CreateWarehouseItemAsync();
-        var dto = MakeOrderDto(item.Id);
-
-        var result = await _service.CreateOrderAsync(dto);
-
-        Assert.True(result.Id > 0);
-        Assert.Equal("Test Street 123", result.ShippingAddress);
-        Assert.Equal(OrderStatus.Pending, result.Status);
-    }
-
-    [Fact]
-    public async Task CreateOrderAsync_CreatesOutboundDelivery()
-    {
-        var item = await CreateWarehouseItemAsync();
-        var dto = MakeOrderDto(item.Id);
-
-        var order = await _service.CreateOrderAsync(dto);
-
-        var delivery = await _context.OutboundDeliveries
-            .FirstOrDefaultAsync(d => d.OrderId == order.Id);
-        Assert.NotNull(delivery);
-    }
-
-    [Fact]
-    public async Task CreateOrderAsync_DecreasesWarehouseStock()
-    {
-        var item = await CreateWarehouseItemAsync(quantity: 100);
-        var dto = MakeOrderDto(item.Id, quantity: 10);
-
-        await _service.CreateOrderAsync(dto);
-
-        var updated = await _itemService.GetByIdAsync(item.Id);
-        Assert.Equal(90, updated!.CurrentQuantity);
-    }
-
-    [Fact]
-    public async Task CreateOrderAsync_WithMultipleItems_CreatesAllItems()
-    {
-        var item1 = await CreateWarehouseItemAsync(50);
-        var item2 = await CreateWarehouseItemAsync(30);
-
-        var dto = new CreateOrderDto
-        {
-            UserId = "user123",
-            ShippingAddress = "Test Street 123",
-            Items = new List<CreateOrderItemDto>
-            {
-                new() { WarehouseItemId = item1.Id, Quantity = 5, Price = 100m },
-                new() { WarehouseItemId = item2.Id, Quantity = 3, Price = 200m }
-            }
+            UserId = "user_123",
+            CustomerName = "Test Customer",
+            CustomerEmail = "test@example.com",
+            ShippingAddress = "Test Address",
+            StripeSessionId = "session_999",
+            SerializedItems = serializedItems
         };
 
-        var result = await _service.CreateOrderAsync(dto);
-
-        Assert.Equal(2, result.Items.Count);
-
-        var updated1 = await _itemService.GetByIdAsync(item1.Id);
-        var updated2 = await _itemService.GetByIdAsync(item2.Id);
-        Assert.Equal(45, updated1!.CurrentQuantity);
-        Assert.Equal(27, updated2!.CurrentQuantity);
-    }
-
-    [Fact]
-    public async Task CreateOrderAsync_InsufficientStock_ThrowsInvalidOperationException()
-    {
-        var item = await CreateWarehouseItemAsync(quantity: 5);
-        var dto = MakeOrderDto(item.Id, quantity: 10);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.CreateOrderAsync(dto));
-    }
-
-    [Fact]
-    public async Task CreateOrderAsync_InsufficientStock_DoesNotSaveOrder()
-    {
-        var item = await CreateWarehouseItemAsync(quantity: 5);
-        var dto = MakeOrderDto(item.Id, quantity: 10);
-
-        try { await _service.CreateOrderAsync(dto); } catch { }
-
-        var orders = await _service.GetAllOrdersAsync();
-        Assert.Empty(orders);
-    }
-
-    // --- GetOrderByIdAsync ---
-
-    [Fact]
-    public async Task GetOrderByIdAsync_ExistingOrder_ReturnsOrder()
-    {
-        var item = await CreateWarehouseItemAsync();
-        var order = await _service.CreateOrderAsync(MakeOrderDto(item.Id));
-
-        var result = await _service.GetOrderByIdAsync(order.Id);
+        var result = await orderService.CreateOrderAsync(orderCreateDto);
 
         Assert.NotNull(result);
-        Assert.Equal(order.Id, result.Id);
+        Assert.Equal("user_123", result.UserId);
+        Assert.Equal(OrderStatus.Pending, result.Status);
+        Assert.Single(result.Items);
+
+        var updatedProduct = await context.Products.FindAsync(1);
+        Assert.Equal(7, updatedProduct.CurrentQuantity);
+
+        var orderInDb = await context.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == result.Id);
+        Assert.NotNull(orderInDb);
+        Assert.Equal(300m, orderInDb.TotalPrice);
     }
 
     [Fact]
-    public async Task GetOrderByIdAsync_NonExisting_ReturnsNull()
+    public async Task CreateOrderAsync_NotEnoughStock_ThrowsInvalidOperationException()
     {
-        var result = await _service.GetOrderByIdAsync(999);
+        using var context = GetDbContext();
 
-        Assert.Null(result);
-    }
+        var product = new Product { Id = 1, CurrentQuantity = 2, ItemCode = $"ITEM-{DateTime.UtcNow:yyyyMMdd}" };
+        await context.Products.AddAsync(product);
+        await context.SaveChangesAsync();
 
-    // --- GetAllOrdersAsync ---
+        var orderService = new OrderService(context);
 
-    [Fact]
-    public async Task GetAllOrdersAsync_ReturnsAllOrders()
-    {
-        var item = await CreateWarehouseItemAsync(1000);
-
-        await _service.CreateOrderAsync(MakeOrderDto(item.Id, 1));
-        await _service.CreateOrderAsync(MakeOrderDto(item.Id, 1));
-        await _service.CreateOrderAsync(MakeOrderDto(item.Id, 1));
-
-        var result = await _service.GetAllOrdersAsync();
-
-        Assert.Equal(3, result.Count());
-    }
-
-    [Fact]
-    public async Task GetAllOrdersAsync_EmptyDatabase_ReturnsEmptyList()
-    {
-        var result = await _service.GetAllOrdersAsync();
-
-        Assert.Empty(result);
-    }
-
-    // --- UpdateOrderAsync ---
-
-    [Fact]
-    public async Task UpdateOrderAsync_WithValidData_UpdatesFields()
-    {
-        var item = await CreateWarehouseItemAsync();
-        var order = await _service.CreateOrderAsync(MakeOrderDto(item.Id));
-
-        var dto = new UpdateOrderDto
+        var itemsDto = new List<OrderItemDto>
         {
-            Id = order.Id,
-            UserId = "user123",
-            ShippingAddress = "New Address 456",
-            Status = OrderStatus.Shipped
+            new OrderItemDto { ProductId = 1, Quantity = 5, Price = 100m }
+        };
+        var serializedItems = JsonSerializer.Serialize(itemsDto);
+
+        var orderCreateDto = new OrderCreateDto
+        {
+            CustomerName = "Test Johnson",
+            CustomerEmail = "test@test.com",
+            ShippingAddress = "Test Address",
+            SerializedItems = serializedItems
         };
 
-        var result = await _service.UpdateOrderAsync(dto);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orderService.CreateOrderAsync(orderCreateDto)
+        );
 
-        Assert.Equal(OrderStatus.Shipped, result.Status);
-        Assert.Equal("New Address 456", result.ShippingAddress);
+        Assert.Contains("Not enough goods in stock", exception.Message);
+
+        var updatedProduct = await context.Products.FindAsync(1);
+        Assert.Equal(2, updatedProduct.CurrentQuantity);
+
+        var ordersCount = await context.Orders.CountAsync();
+        Assert.Equal(0, ordersCount);
     }
-
-    [Fact]
-    public async Task UpdateOrderAsync_NonExistingOrder_ThrowsKeyNotFoundException()
-    {
-        var dto = new UpdateOrderDto
-        {
-            Id = 999,
-            UserId = "user123",
-            ShippingAddress = "Address",
-            Status = OrderStatus.Shipped
-        };
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _service.UpdateOrderAsync(dto));
-    }
-
-    // --- DeleteOrderAsync ---
-
-    [Fact]
-    public async Task DeleteOrderAsync_ExistingOrder_ReturnsTrue()
-    {
-        var item = await CreateWarehouseItemAsync();
-        var order = await _service.CreateOrderAsync(MakeOrderDto(item.Id));
-
-        var result = await _service.DeleteOrderAsync(order.Id);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteOrderAsync_ExistingOrder_RemovesFromDatabase()
-    {
-        var item = await CreateWarehouseItemAsync();
-        var order = await _service.CreateOrderAsync(MakeOrderDto(item.Id));
-
-        await _service.DeleteOrderAsync(order.Id);
-
-        var deleted = await _service.GetOrderByIdAsync(order.Id);
-        Assert.Null(deleted);
-    }
-
-    [Fact]
-    public async Task DeleteOrderAsync_NonExistingOrder_ReturnsFalse()
-    {
-        var result = await _service.DeleteOrderAsync(999);
-
-        Assert.False(result);
-    }
-
-    public void Dispose() => _context.Dispose();
 }

@@ -2,57 +2,47 @@
 
 namespace ClassLibrary.Dto;
 
-/// <summary>
-/// DTO for creating a new order.
-/// </summary>
-public class CreateOrderDto
+// For request a payment link
+public class CartCheckoutDto
 {
     public string? UserId { get; set; }
-    public string ShippingAddress { get; set; } = string.Empty;
-    public List<CreateOrderItemDto> Items { get; set; } = new();
+    public required string CustomerName { get; set; }
+    public required string CustomerEmail { get; set; }
+    public required string ShippingAddress { get; set; }
+    public required List<OrderItemDto> Items { get; set; }
 }
 
-/// <summary>
-/// DTO for creating an order item.
-/// </summary>
-public class CreateOrderItemDto
+// To create a record in the database
+public class OrderCreateDto
 {
-    public int WarehouseItemId { get; set; }
-    public int Quantity { get; set; }
-    public decimal Price { get; set; }
-}
-
-/// <summary>
-/// DTO for updating an existing order.
-/// </summary>
-public class UpdateOrderDto
-{
-    public int Id { get; set; }
     public string? UserId { get; set; }
-    public string ShippingAddress { get; set; } = string.Empty;
-    public OrderStatus Status { get; set; }
+    public required string CustomerName { get; set; }
+    public required string CustomerEmail { get; set; }
+    public required string ShippingAddress { get; set; }
+    public decimal TotalPrice { get; set; }
+
+    // Instead of a complex object, we store serialized JSON with a list of products for the database.
+    public string SerializedItems { get; set; }
+    public string StripeSessionId { get; set; }
 }
 
-/// <summary>
-/// DTO for returning order data to the client.
-/// </summary>
+// For return the finished data to the frontend
 public class OrderResponseDto
 {
-    public int Id { get; set; }
+    public int OrderId { get; set; }
     public string? UserId { get; set; }
-    public string ShippingAddress { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public OrderStatus Status { get; set; }
-    public List<OrderItemResponseDto> Items { get; set; } = new();
+    public required string CustomerName { get; set; }
+    public required string CustomerEmail { get; set; }
+    public required string ShippingAddress { get; set; }
+    public decimal TotalPrice { get; set; }
+    public string Status { get; set; }
+    public List<OrderItemDto> Items { get; set; } = new();
 }
 
-/// <summary>
-/// DTO for returning order item data to the client.
-/// </summary>
-public class OrderItemResponseDto
+// DTO for product items
+public class OrderItemDto
 {
-    public int Id { get; set; }
-    public int WarehouseItemId { get; set; }
+    public int ProductId { get; set; }
     public int Quantity { get; set; }
     public decimal Price { get; set; }
 }

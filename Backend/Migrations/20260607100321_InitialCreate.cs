@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class MinimalizingDb : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -57,7 +57,7 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Item",
+                name: "Product",
                 schema: "Warehouse",
                 columns: table => new
                 {
@@ -70,7 +70,6 @@ namespace Backend.Migrations
                     MinQuantity = table.Column<int>(type: "int", nullable: false),
                     MaxQuantity = table.Column<int>(type: "int", nullable: false),
                     WeightKg = table.Column<decimal>(type: "decimal(12,3)", nullable: false),
-                    VolumeCbm = table.Column<decimal>(type: "decimal(12,4)", nullable: false),
                     Cost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Currency = table.Column<int>(type: "int", nullable: false),
                     ItemCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
@@ -80,7 +79,7 @@ namespace Backend.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Item", x => x.Id);
+                    table.PrimaryKey("PK_Product", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -200,6 +199,8 @@ namespace Backend.Migrations
                     CustomerName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CustomerEmail = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ShippingNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StripeSessionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
@@ -214,6 +215,28 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Delivery",
+                schema: "Warehouse",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderId = table.Column<int>(type: "int", nullable: false),
+                    ShippedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Delivery", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Delivery_Order_OrderId",
+                        column: x => x.OrderId,
+                        principalSchema: "Warehouse",
+                        principalTable: "Order",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderItem",
                 schema: "Warehouse",
                 columns: table => new
@@ -221,7 +244,7 @@ namespace Backend.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
-                    WarehouseItemId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
@@ -229,72 +252,17 @@ namespace Backend.Migrations
                 {
                     table.PrimaryKey("PK_OrderItem", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_OrderItem_Item_WarehouseItemId",
-                        column: x => x.WarehouseItemId,
-                        principalSchema: "Warehouse",
-                        principalTable: "Item",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_OrderItem_Order_OrderId",
                         column: x => x.OrderId,
                         principalSchema: "Warehouse",
                         principalTable: "Order",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OutboundDelivery",
-                schema: "Warehouse",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    OrderId = table.Column<int>(type: "int", nullable: false),
-                    ShippingNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    DepartureDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DestinationAddress = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    RecipientName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OutboundDelivery", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_OutboundDelivery_Order_OrderId",
-                        column: x => x.OrderId,
+                        name: "FK_OrderItem_Product_ProductId",
+                        column: x => x.ProductId,
                         principalSchema: "Warehouse",
-                        principalTable: "Order",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OutboundDeliveryItem",
-                schema: "Warehouse",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    OutboundDeliveryId = table.Column<int>(type: "int", nullable: false),
-                    WarehouseItemId = table.Column<int>(type: "int", nullable: false),
-                    QuantityShipped = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OutboundDeliveryItem", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_OutboundDeliveryItem_Item_WarehouseItemId",
-                        column: x => x.WarehouseItemId,
-                        principalSchema: "Warehouse",
-                        principalTable: "Item",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OutboundDeliveryItem_OutboundDelivery_OutboundDeliveryId",
-                        column: x => x.OutboundDeliveryId,
-                        principalSchema: "Warehouse",
-                        principalTable: "OutboundDelivery",
+                        principalTable: "Product",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -339,6 +307,12 @@ namespace Backend.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Delivery_OrderId",
+                schema: "Warehouse",
+                table: "Delivery",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Order_UserId",
                 schema: "Warehouse",
                 table: "Order",
@@ -351,28 +325,10 @@ namespace Backend.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderItem_WarehouseItemId",
+                name: "IX_OrderItem_ProductId",
                 schema: "Warehouse",
                 table: "OrderItem",
-                column: "WarehouseItemId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OutboundDelivery_OrderId",
-                schema: "Warehouse",
-                table: "OutboundDelivery",
-                column: "OrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OutboundDeliveryItem_OutboundDeliveryId",
-                schema: "Warehouse",
-                table: "OutboundDeliveryItem",
-                column: "OutboundDeliveryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OutboundDeliveryItem_WarehouseItemId",
-                schema: "Warehouse",
-                table: "OutboundDeliveryItem",
-                column: "WarehouseItemId");
+                column: "ProductId");
         }
 
         /// <inheritdoc />
@@ -394,26 +350,22 @@ namespace Backend.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "OrderItem",
+                name: "Delivery",
                 schema: "Warehouse");
 
             migrationBuilder.DropTable(
-                name: "OutboundDeliveryItem",
+                name: "OrderItem",
                 schema: "Warehouse");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Item",
-                schema: "Warehouse");
-
-            migrationBuilder.DropTable(
-                name: "OutboundDelivery",
-                schema: "Warehouse");
-
-            migrationBuilder.DropTable(
                 name: "Order",
+                schema: "Warehouse");
+
+            migrationBuilder.DropTable(
+                name: "Product",
                 schema: "Warehouse");
 
             migrationBuilder.DropTable(
